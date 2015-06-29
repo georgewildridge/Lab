@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<svg width="800" height="500">
+
+</svg>
+
+</body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+var svg = d3.select("svg");
+var data = [
+	{city: "London", temp: 65, cond: "Partly Cloudy"},
+	{city: "New Haven", temp: 82, cond: "Sunny"},
+	{city: "New York", temp: 86, cond: "Partly Cloudy"},
+	{city: "Los Angeles", temp: 70, cond: "Cloudy"},
+	{city: "Moscow", temp: 83, cond: "Sunny"},
+	{city: "Beijing", temp: 80, cond: "Partly Cloudy"},
+	{city: "Sydney", temp: 69 , cond: "Sunny"},
+	{city: "Nairobi", temp: 76 , cond: "Sunny"},
+	
+]
+//var sortedData = JSON.parse(data);
+
+for (city in sortedData){
+	var city.city = svg.append("rect")
+	
+}
+var squareLondon = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareNewhaven = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareNewyork = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareLosangeles = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareMoscow = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareBeijing = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareSydney = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+var squareNairobi = svg.append("rect")
+  	.attr("x",200)
+  	.attr("y",60)
+  	.attr("width",100)
+  	.attr("height",100);
+svg.selectAll("rect")
+	.style("opacity",0)
+	.transition()
+	.attr("x",300);
+var allRect = svg.selectAll("rect")	
+var button=svg.append("rect")
+  .attr("x",100)
+  .attr("y",10)
+  .attr("width",20)
+  .attr("height",10);
+squareLondon
+	.style("fill","orange");
+button
+	.style("fill","purple");
+var clicked = 0;
+button.on("click", function() {
+	for (specRect in svg.selectAll("rect")) {
+		if (clicked == 0) {
+			specRect.transition().attr("x",100)
+				.style("opacity",10)
+			clicked += 1;
+		//squareLondon.transition().attr("x",200)
+			//.style("opacity",10)
+			//.delay(200)
+			//.duration(1000)
+		//allRect.transition().attr("x",100)
+		//	.style("opacity",10)
+		}
+		else {
+			squareLondon.transition().attr("x",100)
+			clicked -=1;
+		}
+	}
+})
+
+	
+//squareLondon	
+//	.transition()
+//	.attr("x",500)
+//	.delay(1700);
+//squareLondon	
+//	.style("opacity",10);
+</script>

@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<svg width="800" height="500">
+
+</svg>
+
+</body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+var svg = d3.select("svg")
+d3.tsv("Dropbox/Lab/Test.tsv", function(error, data) {
+    data.forEach(function(d) {
+        d.date = parseDate(d.date);
+        d.close = +d.close;
+    console.log(d)
+    	)}
+    });
+
+</script>

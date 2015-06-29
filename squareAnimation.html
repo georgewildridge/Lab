@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<body>
+<svg width="800" height="500">
+
+</svg>
+
+</body>
+<script src="http://d3js.org/d3.v3.min.js"></script>
+<script>
+var svg = d3.select("svg");
+var mySquare1=svg.append("rect")
+  .attr("x",200)
+  .attr("y",60)
+  .attr("width",100)
+  .attr("height",60);
+mySquare1
+	.style("fill","orange")
+	.transition()
+	.attr("x",20);
+var mySquare2=svg.append("rect")
+  .attr("x",100)
+  .attr("y",120)
+  .attr("width",100)
+  .attr("height",60);
+mySquare2
+	.style("fill","yellow")
+	.transition()
+	.attr("y",20)
+	.style("opacity",0);
+mySquare1.transition()
+	.attr("x",100)
+	.duration(1000)
+	.delay(150);
+var button=svg.append("rect")
+  .attr("x",100)
+  .attr("y",10)
+  .attr("width",20)
+  .attr("height",10);
+button
+	.style("fill","green");
+button.on("click", function() {
+	mySquare2.transition().style("opacity",10)
+	mySquare1.transition().style("fill","blue")
+	mySquare1.transition().attr("x",600)
+			.delay(200)
+			.duration(10000);
+})
+</script>
+
+
