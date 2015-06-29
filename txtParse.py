@@ -130,11 +130,9 @@ def pop_stack_sib(spaces_in_current_row):
 	global num_spaces_per_row
 	global stack
 	for i in range(1, len(num_spaces_per_row)):
-		print num_spaces_per_row, spaces_in_current_row, i
 		if spaces_in_current_row >= num_spaces_per_row[-i]:
 			stack.pop()
 			num_spaces_per_row.pop()
-			print "popped"
 			break
 
 
@@ -142,15 +140,11 @@ def pop_stack_parent(spaces_in_current_row):
 	global num_spaces_per_row
 	global stack
 	for i in range(1, len(num_spaces_per_row)):
-		print num_spaces_per_row, spaces_in_current_row, i
 		if spaces_in_current_row == num_spaces_per_row[-i]:
 			to_pop = i
 			for x in range(to_pop):
-			#	print stack[-1]
-			#	print "look"
 				stack.pop()
 				num_spaces_per_row.pop()
-				print "popped"
 			break
 
 
@@ -178,7 +172,6 @@ while(True):
 		prev_row = rows[last_row]
 		clean_row = retrieve_text(row_at)
 		order = ordering_class(row_at)
-		print order
 		new_node = TaskHTN(clean_row, order)
 		p = stack[-1]
 		
@@ -229,4 +222,3 @@ while(True):
 	stack.append(new_node)
 	num_spaces_per_row.append(num_of_spaces(row))
 	row_at += 1
-	print "\n\n"
