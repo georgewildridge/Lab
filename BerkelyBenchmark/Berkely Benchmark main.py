@@ -164,6 +164,8 @@ def loadDataset():
 	test_set_x_T = T.TensorType(dtype="float64", broadcastable=())
 	test_set_x_T.value = test_set_x
 	test_set_x = test_set_x_T
+	test_set_x = theano.shared(test_set_x)
+
 '''
 	
 	test_set_x = numpy.asarray(test_set_x)
@@ -183,7 +185,7 @@ def loadDataset():
 	test_set_y = theano.shared(test_set_y)
 	#train_set_x = np.asarray(train_set_x)
 	#train_set_x = T.cast(train_set_x, 'float64')
-	#train_set_x = T.reshape(train_set_x, [train_set_x.shape[0], train_set_x.shape[1]*train_set_x.shape[2]*train_set_x.shape[3]])
+	#train_set_x = T.reshape(train_set_x, [train_set_x.shape[0], train_set_x.shape[1]*train_set_x.shape[2])
 	#train_set_y = np.asarray(train_set_y)
 	#train_set_y = theano.shared(train_set_y)
 	#train_set_y = T.cast(train_set_y, 'int32')
@@ -424,7 +426,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 	# compiling a Theano function that computes the mistakes that are made
 	# by the model on a minibatch
-
+	print "test_set_y"
+	print test_set_y
 	test_model = theano.function(
 		inputs=[index],
 		outputs=classifier.errors(y),
