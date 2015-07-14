@@ -135,7 +135,7 @@ def loadDataset():
 
 
 ## To theano shared variable
-	train_set_y = numpy.array(train_set_y)
+	'''train_set_y = numpy.array(train_set_y)
 	train_set_y_T = T.TensorType(dtype="float64", broadcastable=())
 	train_set_y_T.value = train_set_y
 	train_set_y = train_set_y_T
@@ -164,9 +164,24 @@ def loadDataset():
 	test_set_x_T = T.TensorType(dtype="float64", broadcastable=())
 	test_set_x_T.value = test_set_x
 	test_set_x = test_set_x_T
+'''
+	
+	test_set_x = numpy.asarray(test_set_x)
+	val_set_x = numpy.asarray(val_set_x)
+	test_set_x = numpy.asarray(test_set_x)
+	test_set_y = numpy.array(test_set_y)
+	val_set_y = numpy.array(val_set_y)
+	train_set_y = numpy.array(train_set_y)
 
+
+	train_set_x = theano.shared(train_set_x)
+	val_set_x = theano.shared(val_set_x)
+	test_set_x = theano.shared(test_set_x)
+
+	train_set_y = theano.shared(train_set_y)
+	val_set_y = theano.shared(val_set_y)
+	test_set_y = theano.shared(test_set_y)
 	#train_set_x = np.asarray(train_set_x)
-	#train_set_x = theano.shared(train_set_x)
 	#train_set_x = T.cast(train_set_x, 'float64')
 	#train_set_x = T.reshape(train_set_x, [train_set_x.shape[0], train_set_x.shape[1]*train_set_x.shape[2]*train_set_x.shape[3]])
 	#train_set_y = np.asarray(train_set_y)
@@ -370,9 +385,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 	test_set_x, test_set_y = datasets[2]
 
 	# compute number of minibatches for training, validation and testing
-	n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
-	n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size
-	n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
+	n_train_batches = len(train_set_x.get_value()) / batch_size
+	n_valid_batches = len(valid_set_x.get_value()) / batch_size
+	n_test_batches = len(test_set_x.get_value()) / batch_size
 
 	######################
 	# BUILD ACTUAL MODEL #
@@ -409,12 +424,13 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 	# compiling a Theano function that computes the mistakes that are made
 	# by the model on a minibatch
+
 	test_model = theano.function(
 		inputs=[index],
 		outputs=classifier.errors(y),
 		givens={
-			x: test_set_x[index * batch_size:(index + 1) * batch_size],
-			y: test_set_y[index * batch_size:(index + 1) * batch_size]
+			x: test_set_x[index * batch_size : (index + 1) * batch_size],
+			y: test_set_y[index * batch_size : (index + 1) * batch_size]
 		}
 	)
 
@@ -422,8 +438,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 		inputs=[index],
 		outputs=classifier.errors(y),
 		givens={
-			x: valid_set_x[index * batch_size:(index + 1) * batch_size],
-			y: valid_set_y[index * batch_size:(index + 1) * batch_size]
+			x: valid_set_x[index * batch_size : (index + 1) * batch_size],
+			y: valid_set_y[index * batch_size : (index + 1) * batch_size]
 		}
 	)
 
@@ -452,8 +468,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 		outputs=cost,
 		updates=updates,
 		givens={
-			x: train_set_x[index * batch_size: (index + 1) * batch_size],
-			y: train_set_y[index * batch_size: (index + 1) * batch_size]
+			x: train_set_x[index * batch_size : (index + 1) * batch_size],
+			y: train_set_y[index * batch_size : (index + 1) * batch_size]
 		}
 	)
 	# end-snippet-5
@@ -488,6 +504,7 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 		for minibatch_index in xrange(n_train_batches):
 
 			minibatch_avg_cost = train_model(minibatch_index)
+
 			# iteration number
 			iter = (epoch - 1) * n_train_batches + minibatch_index
 
