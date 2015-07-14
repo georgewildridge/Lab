@@ -8,7 +8,6 @@ import theano.tensor as T
 import timeit
 from logistic_sgd import LogisticRegression, load_data
 def loadDataset(x_path, y_path):
-	#Train Dataset
 	#Loading the Images or X_values
 	dirs_x = os.listdir( x_path )
 	valid_images = [".jpg"]
@@ -44,7 +43,7 @@ def loadDataset(x_path, y_path):
 		set_y.append(singular_matrix)
 	return set_x, set_y
 
-train_path_x, train_path_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/')
+train_set_x, train_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/')
 valid_set_x, valid_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/val/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/val/')
 test_set_x, test_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/test/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/test/')
 

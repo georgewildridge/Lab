@@ -11,186 +11,57 @@ import theano.tensor as T
 import timeit
 from logistic_sgd import LogisticRegression, load_data
 
-def loadDataset():
+def loadDataset(x_path, y_path):
 	print "loading data..."
-	#Train Dataset
-	#Loading the Images or X_train values
-	train_path_x = '/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/'
-	train_dirs_x = os.listdir( train_path_x )
+	#Loading the Images or X_values
+	dirs_x = os.listdir( x_path )
 	valid_images = [".jpg"]
-	train_set_x = []
+	set_x = []
 	rotated = {}
-	for file in train_dirs_x:
+	for file in dirs_x:
 		ext = os.path.splitext(file)[1]
 		file_name = os.path.splitext(file)[0]
 		if ext.lower() not in valid_images:
 			continue
-		img = Image.open(train_path_x + file)
+		img = Image.open(x_path + file).getdata()
 		width, height = img.size
 		if width != 481 and height !=321:
 			rotated[file_name] = 1
 			img = img.rotate(270) #rotates counter clockwise
 		else:
 			rotated[file_name] = 0 
-		append_array = numpy.array(img.getdata(), numpy.uint8).reshape(img.size[1], img.size[0], 3)
-		train_set_x.append(append_array)
-	#loading the matricies and Y_train values
-	train_path_y = '/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/'
-	train_dirs_y = os.listdir( train_path_y )
+		set_x.append(img)
+	#loading the matricies and Y_values
+	dirs_y = os.listdir( y_path )
 	valid_files = [ ".mat" ]
-	train_set_y = []
-	for file in train_dirs_y:
+	set_y = []
+	for file in dirs_y:
 		ext = os.path.splitext(file)[1]
 		filename = os.path.splitext(file)[0]
 		if ext.lower() not in valid_files:
 			continue
-		train_dataset = numpy.array(scipy.io.loadmat(train_path_y + filename)["groundTruth"])
-		singular_matrix = train_dataset[0][0][0][0][0]
+		dataset = numpy.array(scipy.io.loadmat(y_path + filename)["groundTruth"])
+		singular_matrix = dataset[0][0][0][0][0]
 		value = rotated[filename]
 		if value == 1:
 			singular_matrix = zip(*singular_matrix[::-1])
-		train_set_y.append(singular_matrix)
+		set_y.append(singular_matrix)
 	
-	#VALIDATION DATASET
-	# loading the validation images or X_valid values
-	val_path_x = '/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/val/'
-	val_dirs_x = os.listdir( val_path_x )
-	valid_images = [".jpg"]
-	val_set_x = []
-	rotated = {}
-	for file in val_dirs_x:
-		ext = os.path.splitext(file)[1]
-		file_name = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images:
-			continue
-		img = Image.open(val_path_x + file)
-		width, height = img.size
-		if width != 481 and height !=321:
-			rotated[file_name] = 1
-			img = img.rotate(270) #rotates counter clockwise
-		else:
-			rotated[file_name] = 0 
-		append_array = numpy.array(img.getdata(), numpy.uint8).reshape(img.size[1], img.size[0], 3)
-		val_set_x.append(append_array)
-	#loading the matricies or Y_val values
-	val_path_y = '/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/val/'
-	val_dirs_y = os.listdir( val_path_y )
-	valid_files = [ ".mat" ]
-	val_set_y = []
-	for file in val_dirs_y:
-		ext = os.path.splitext(file)[1]
-		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_files:
-			continue
-		val_dataset = numpy.array(scipy.io.loadmat(val_path_y + filename)["groundTruth"])
-		singular_matrix = val_dataset[0][0][0][0][0]
-		value = rotated[filename]
-		if value == 1:
-			singular_matrix = zip(*singular_matrix[::-1])
-		val_set_y.append(singular_matrix)
+	#TO THEANO SHARED VARIABLE
+	set_x = numpy.asarray(set_x)
+	set_y = numpy.asarray(set_y)	
 
-	#TEST DATASET
-	#loadiing the  test images or X_test values
-	test_path_x = '/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/test/'
-	test_dirs_x = os.listdir( test_path_x )
-	valid_images = [".jpg"]
-	test_set_x = []
-	rotated = {}
-	for file in test_dirs_x:
-		ext = os.path.splitext(file)[1]
-		file_name = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images:
-			continue
-		img = Image.open(test_path_x + file)
-		width, height = img.size
-		if width != 481 and height !=321:
-			rotated[file_name] = 1
-			img = img.rotate(270) #rotates counter clockwise
-		else:
-			rotated[file_name] = 0 
-		append_array = numpy.array(img.getdata(), numpy.uint8).reshape(img.size[1], img.size[0], 3)
-		test_set_x.append(append_array)
-	#loading the  test matricies or y_test values
-	test_path_y = '/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/test/'
-	test_dirs_y = os.listdir( test_path_y )
-	valid_files = [ ".mat" ]
-	test_set_y = []
-	for file in test_dirs_y:
-		ext = os.path.splitext(file)[1]
-		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_files:
-			continue
-		test_dataset = numpy.array(scipy.io.loadmat(test_path_y + filename)["groundTruth"])
-		singular_matrix = test_dataset[0][0][0][0][0]
-		value = rotated[filename]
-		if value == 1:
-			singular_matrix = zip(*singular_matrix[::-1])
-		test_set_y.append(singular_matrix)
-
-	
+	set_x = theano.shared(set_x)
+	set_y = theano.shared(set_y)
 
 
 
 
 
 
-## To theano shared variable
-	'''train_set_y = numpy.array(train_set_y)
-	train_set_y_T = T.TensorType(dtype="float64", broadcastable=())
-	train_set_y_T.value = train_set_y
-	train_set_y = train_set_y_T
 
-	val_set_y = numpy.array(val_set_y)
-	val_set_y_T = T.TensorType(dtype="float64", broadcastable=())
-	val_set_y_T.value = val_set_y
-	val_set_y = val_set_y_T
-
-	test_set_y = numpy.array(test_set_y)
-	test_set_y_T = T.TensorType(dtype="float64", broadcastable=())
-	test_set_y_T.value = test_set_y
-	test_set_y = test_set_y_T
-
-	train_set_x = numpy.asarray(train_set_x)
-	train_set_x_T = T.TensorType(dtype="float64", broadcastable=())
-	train_set_x_T.value = train_set_x
-	train_set_x = train_set_x_T
-
-	val_set_x = numpy.asarray(val_set_x)
-	val_set_x_T = T.TensorType(dtype="float64", broadcastable=())
-	val_set_x_T.value = val_set_x
-	val_set_x = val_set_x_T
-
-	test_set_x = numpy.asarray(test_set_x)
-	test_set_x_T = T.TensorType(dtype="float64", broadcastable=())
-	test_set_x_T.value = test_set_x
-	test_set_x = test_set_x_T
-	test_set_x = theano.shared(test_set_x)
-
-'''
-	
-	test_set_x = numpy.asarray(test_set_x)
-	val_set_x = numpy.asarray(val_set_x)
-	test_set_x = numpy.asarray(test_set_x)
-	test_set_y = numpy.array(test_set_y)
-	val_set_y = numpy.array(val_set_y)
-	train_set_y = numpy.array(train_set_y)
-
-
-	train_set_x = theano.shared(train_set_x)
-	val_set_x = theano.shared(val_set_x)
-	test_set_x = theano.shared(test_set_x)
-
-	train_set_y = theano.shared(train_set_y)
-	val_set_y = theano.shared(val_set_y)
-	test_set_y = theano.shared(test_set_y)
-	#train_set_x = np.asarray(train_set_x)
-	#train_set_x = T.cast(train_set_x, 'float64')
-	#train_set_x = T.reshape(train_set_x, [train_set_x.shape[0], train_set_x.shape[1]*train_set_x.shape[2])
-	#train_set_y = np.asarray(train_set_y)
-	#train_set_y = theano.shared(train_set_y)
-	#train_set_y = T.cast(train_set_y, 'int32')
 	print "data loaded"
-	return [train_set_x, train_set_y], [val_set_x, val_set_y], [test_set_x, test_set_y]
+	return set_x, set_y
 
 		
 
@@ -380,11 +251,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 
    """
-	datasets = loadDataset()
-
-	train_set_x, train_set_y = datasets[0]
-	valid_set_x, valid_set_y = datasets[1]
-	test_set_x, test_set_y = datasets[2]
+	train_set_x, train_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/')
+	valid_set_x, valid_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/val/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/val/')
+	test_set_x, test_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/test/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/test/')
 
 	# compute number of minibatches for training, validation and testing
 	n_train_batches = len(train_set_x.get_value()) / batch_size
