@@ -12,7 +12,6 @@ import timeit
 from logistic_sgd import LogisticRegression, load_data
 
 def loadDataset(x_path, y_path):
-	print "loading data..."
 	#Loading the Images or X_values
 	dirs_x = os.listdir( x_path )
 	valid_images = [".jpg"]
@@ -48,20 +47,21 @@ def loadDataset(x_path, y_path):
 		set_y.append(singular_matrix)
 	
 	#TO THEANO SHARED VARIABLE
-	set_x = numpy.asarray(set_x)
-	set_y = numpy.asarray(set_y)	
+	set_x = numpy.asarray(set_x, dtype='float64')
+	set_y = numpy.asarray(set_y, dtype='int32')
 
-	set_x = theano.shared(set_x)
+	set_x_len = theano.shared(set_x)# for the purpose of finding the length later
 	set_y = theano.shared(set_y)
 
+	#set_x = T.cast(set_x_len, 'float64')
+	set_x = T.reshape(set_x_len, [set_x_len.shape[0], set_x_len.shape[1]*set_x_len.shape[2]])
+	#set_y = T.cast(set_y,'float64')
+	set_y = T.reshape(set_y, [set_y.shape[0]* set_y.shape[1]*set_y.shape[2]])
+	
+
+	return set_x, set_y, set_x_len
 
 
-
-
-
-
-	print "data loaded"
-	return set_x, set_y
 
 		
 
@@ -251,14 +251,16 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 
    """
-	train_set_x, train_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/')
-	valid_set_x, valid_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/val/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/val/')
-	test_set_x, test_set_y = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/test/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/test/')
+	print "Loading data..."
+	train_set_x, train_set_y, train_len = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/')
+	valid_set_x, valid_set_y, valid_len = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/val/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/val/')
+	test_set_x, test_set_y, test_len = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/test/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/test/')
+	print "...data loaded"
 
 	# compute number of minibatches for training, validation and testing
-	n_train_batches = len(train_set_x.get_value()) / batch_size
-	n_valid_batches = len(valid_set_x.get_value()) / batch_size
-	n_test_batches = len(test_set_x.get_value()) / batch_size
+	n_train_batches = len(train_len.get_value()) / batch_size
+	n_valid_batches = len(valid_len.get_value()) / batch_size
+	n_test_batches = len(test_len.get_value()) / batch_size
 
 	######################
 	# BUILD ACTUAL MODEL #
@@ -295,8 +297,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 	# compiling a Theano function that computes the mistakes that are made
 	# by the model on a minibatch
-	print "test_set_y"
+	print "rut row"
 	print test_set_y
+	print test_set_x
 	test_model = theano.function(
 		inputs=[index],
 		outputs=classifier.errors(y),
