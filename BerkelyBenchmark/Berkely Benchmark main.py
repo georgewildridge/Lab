@@ -10,6 +10,7 @@ import theano
 import theano.tensor as T
 import timeit
 from logistic_sgd import LogisticRegression, load_data
+import glob
 
 def loadDataset(x_path, y_path):
 	#Loading the Images or X_values
@@ -34,37 +35,69 @@ def loadDataset(x_path, y_path):
 	dirs_y = os.listdir( y_path )
 	valid_files = [ ".mat" ]
 	set_y = []
+	i = 0
 	for file in dirs_y:
 		ext = os.path.splitext(file)[1]
 		filename = os.path.splitext(file)[0]
 		if ext.lower() not in valid_files:
 			continue
 		dataset = numpy.array(scipy.io.loadmat(y_path + filename)["groundTruth"])
-		singular_matrix = dataset[0][0][0][0][0]
-		value = rotated[filename]
+		singular_matrix = dataset[0][0][0][0][1]
+		
+		#if i == 0:
+			#print "sing mat"
+			#print singular_matrix
+		#	i = 1
+		value = rotated[str(filename)]
 		if value == 1:
 			singular_matrix = zip(*singular_matrix[::-1])
 		set_y.append(singular_matrix)
+		
 	
-	#TO THEANO SHARED VARIABLE
+	#TO THEANO SHARED VARIABLE#
 	set_x = numpy.asarray(set_x, dtype='float64')
 	set_y = numpy.asarray(set_y, dtype='int32')
 
-	set_x_len = theano.shared(set_x)# for the purpose of finding the length later
-	set_y = theano.shared(set_y)
+	set_x_len = theano.shared(set_x, borrow=True)# for the purpose of finding the length later
+	set_y = theano.shared(set_y, borrow=True)
 
 	#set_x = T.cast(set_x_len, 'float64')
 	set_x = T.reshape(set_x_len, [set_x_len.shape[0], set_x_len.shape[1]*set_x_len.shape[2]])
-	#set_y = T.cast(set_y,'float64')
+	#set_y = T.cast(set_y,'float64') #wrong .. to keep the compiler errors short disregard when running the whole thing !!!!!!!!!!!!!
 	set_y = T.reshape(set_y, [set_y.shape[0]* set_y.shape[1]*set_y.shape[2]])
 	
 
 	return set_x, set_y, set_x_len
 
+''' MOSTLY JACKS CODE THAT WILL BE INCORPORATED LATER FOR THE PURPOSE OF SLICING THE IMAGES AND MATRICIES TO MAKE IT BOTH RUN FASTER ON THE CPU AND TO ENABLE MULTIPLE SUBSECTIONS OF THE IMAGES FOR THE PURPOSE OF MORE TRAINING DATA
+def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
+	for folders in os.walk('x_path_load'):
+		for folder in folders[1]:
+			print folder
+			os.chdir("x_path_load/" + folder)
+			for filename in glob.glob('*.jpg'):
+				img = Image.open(filename)
+				img = img.crop((225, 145, 257, 177))
+				img.save(filename)
+			os.chdir("x_path_load")
 
-
-		
-
+	i=0
+	for folders in os.walk('y_path_load'):
+		for folder in folders[1]:
+			print folder
+			os.chdir("y_path_load/" + folder)
+			for filename in glob.glob('*.mat'):
+				mat_as_array = scipy.io.loadmat(filename)['groundTruth'][0][0][0][0][1]
+				cropped_mat_as_array = mat_as_array[225:257, 145:177]
+				if i==0:
+					print cropped_mat_as_array
+					print cropped_mat_as_array.shape
+					i=1
+				total_mat_file = scipy.io.loadmat(filename)
+				total_mat_file['groundTruth'][0][0][0][0][0] = cropped_mat_as_array
+				scipy.io.savemat(filename, total_mat_file)
+			os.chdir("y_path_load")
+'''
 class HiddenLayer(object):
 	def __init__(self, rng, input, n_in, n_out, W=None, b=None,
 				 activation=T.tanh):
@@ -252,15 +285,15 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
    """
 	print "Loading data..."
-	train_set_x, train_set_y, train_len = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/train/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/train/')
-	valid_set_x, valid_set_y, valid_len = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/val/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/val/')
-	test_set_x, test_set_y, test_len = loadDataset('/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/images/test/','/Users/George/Desktop/BerkelyBenchmark/BSR/BSDS500/data/groundTruth/test/')
+	train_set_x, train_set_y, train_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/train/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/train/')
+	valid_set_x, valid_set_y, valid_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/val/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/val/')
+	test_set_x, test_set_y, test_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/test/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/test/')
 	print "...data loaded"
 
 	# compute number of minibatches for training, validation and testing
-	n_train_batches = len(train_len.get_value()) / batch_size
-	n_valid_batches = len(valid_len.get_value()) / batch_size
-	n_test_batches = len(test_len.get_value()) / batch_size
+	n_train_batches = len(train_set_x.eval()) / batch_size
+	n_valid_batches = len(valid_set_x.eval()) / batch_size
+	n_test_batches = len(test_set_x.eval()) / batch_size
 
 	######################
 	# BUILD ACTUAL MODEL #
@@ -279,9 +312,9 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 	classifier = MLP(
 		rng=rng,
 		input=x,
-		n_in=28 * 28,
+		n_in=481 * 321 * 3,
 		n_hidden=n_hidden,
-		n_out=10
+		n_out=1024
 	)
 
 	# start-snippet-4
