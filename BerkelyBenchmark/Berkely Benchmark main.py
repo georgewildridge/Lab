@@ -13,9 +13,15 @@ from logistic_sgd import LogisticRegression, load_data
 import glob
 import random
 
-
+#THEANO_FLAGS=device=cpu python.. 
 
 #MOSTLY JACKS CODE THAT WILL BE INCORPORATED LATER FOR THE PURPOSE OF SLICING THE IMAGES AND MATRICIES TO MAKE IT BOTH RUN FASTER ON THE CPU AND TO ENABLE MULTIPLE SUBSECTIONS OF THE IMAGES FOR THE PURPOSE OF MORE TRAINING DATA
+#1 OG FILE AREA--> all files are saved to another folder reoriented
+#2 
+
+
+
+
 def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
 	
 	randomNumberx = random.randrange(0,481)
@@ -58,55 +64,83 @@ def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
 					print cropped_mat_as_array.shape
 					i=1
 				total_mat_file = scipy.io.loadmat(filename)
-				total_mat_file['groundTruth'][0][0][0][0][0] = cropped_mat_as_array
+				total_mat_file['groundTruth'][0][0][0][0][1] = cropped_mat_as_array
 				scipy.io.savemat(y_path_save + filename, total_mat_file)
 			os.chdir(y_path_load)
 
 
 
-def loadDataset(x_path, y_path):
-	#Loading the Images or X_values
-	dirs_x = os.listdir( x_path )
-	valid_images = [".jpg"]
-	set_x = []
+def loadDataset(x_path_init, y_path_init, x_path_save, y_path_save, x_path_load, y_path_load):
+	#Rotating the Images or X_values
+	dirs_x_init = os.listdir( x_path_init )
+	valid_images_x = [".jpg"]
+	set_x = [] 
 	rotated = {}
-	for file in dirs_x:
+	for file in dirs_x_init:
 		ext = os.path.splitext(file)[1]
 		file_name = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images:
+		if ext.lower() not in valid_images_x:
 			continue
-		img = Image.open(x_path + file).getdata()
+		img = Image.open(x_path_init + file)#.getdata()
 		width, height = img.size
 		if width != 481 and height !=321:
 			rotated[file_name] = 1
 			img = img.rotate(270) #rotates counter clockwise
 		else:
 			rotated[file_name] = 0
-			 
-		set_x.append(img)
-	#loading the matricies and Y_values
-	dirs_y = os.listdir( y_path )
-	valid_files = [ ".mat" ]
+		img.save(x_path_save + file_name + '.jpg')
+
+	#rotating the matricies and Y_values
+	dirs_y_init = os.listdir( y_path_init )
+	valid_files_y = [ ".mat" ]
 	set_y = []
-	i = 0
-	for file in dirs_y:
+	for file in dirs_y_init:
 		ext = os.path.splitext(file)[1]
 		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_files:
+		if ext.lower() not in valid_files_y:
 			continue
-		dataset = numpy.array(scipy.io.loadmat(y_path + filename)["groundTruth"])
+		dataset = numpy.array(scipy.io.loadmat(y_path_init + filename)["groundTruth"])
 		singular_matrix = dataset[0][0][0][0][1]
-		
-		#if i == 0:
-			#print "sing mat"
-			#print singular_matrix
-		#	i = 1
+		print singular_matrix
 		value = rotated[str(filename)]
 		if value == 1:
 			singular_matrix = zip(*singular_matrix[::-1])
+		print singular_matrix
+
+		dataset[0][0][0][0][1] = singular_matrix
+		scipy.io.savemat(y_path_save + filename + '.mat', dataset)
 		
-		set_y.append(singular_matrix)
-		
+	#taking random 32 by 32 sections of the images their coresponding matricies
+
+	subsection(x_path_save,y_path_save,x_path_load, y_path_load)
+	
+
+	#LOADING THE IMAGES AND MATRICIES
+	dirs_x_load = os.listdir( x_path_load )
+	valid_images_x = [".jpg"]
+	set_x = []
+	for file in dirs_x:
+		ext = os.path.splitext(file)[1]
+		file_name = os.path.splitext(file)[0]
+		if ext.lower() not in valid_images:
+			continue
+		img = Image.open(x_path + file).getdata()
+		set_x.append( img )
+
+
+	dirs_y_load = os.listdir( y_path_init )
+	valid_files_y = [ ".mat" ]
+	set_y = []
+	for file in dirs_y_load:
+		ext = os.path.splitext(file)[1]
+		filename = os.path.splitext(file)[0]
+		if ext.lower() not in valid_files_y:
+			continue
+		dataset = numpy.array(scipy.io.loadmat(y_path_init + filename)["groundTruth"])
+		singular_matrix = dataset[0][0][0][0][1]
+		set_y.append( singular_matrix )
+
+
 	
 	#TO THEANO SHARED VARIABLE#
 	set_x = numpy.asarray(set_x, dtype='float64')
@@ -319,10 +353,14 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 
    """
+
+
+
+
 	print "Loading data..."
-	train_set_x, train_set_y, train_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/train/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/train/')
-	valid_set_x, valid_set_y, valid_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/val/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/val/')
-	test_set_x, test_set_y, test_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/test/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/test/')
+	train_set_x, train_set_y, train_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/train/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/images/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/groundTruth/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/images/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/groundTruth/train/')
+	valid_set_x, valid_set_y, valid_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/val/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/images/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/groundTruth/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/images/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/groundTruth/val/')
+	test_set_x, test_set_y, test_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/test/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/test/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/images/test/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/groundTruth/test/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/images/test/',  '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/groundTruth/test/')
 	print "...data loaded"
 
 	# compute number of minibatches for training, validation and testing
@@ -504,57 +542,3 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 if __name__ == '__main__':
 	test_mlp()
-
-
-
-
-'''
-		train_set_x.append(train_dataset['X'][:, :, :, i])
-	train_set_y = train_dataset['y'][:50000,0]
-	train_set_x = numpy.asarray(train_set_x)
-	train_set_x = theano.shared(train_set_x)
-	train_set_x = T.cast(train_set_x, 'float64')
-	train_set_x = T.reshape(train_set_x, [train_set_x.shape[0], train_set_x.shape[1]*train_set_x.shape[2]*train_set_x.shape[3]])
-	train_set_y = numpy.asarray(train_set_y)
-	train_set_y = theano.shared(train_set_y)
-	train_set_y = T.cast(train_set_y, 'int32')
-	print "Done with creating training dataset"
-
-   
-
-
-
-
-   valid_set_x = []
-   for i in range(50001, 73257):
-	   valid_set_x.append(train_dataset['X'][:, :, :, i])
-   valid_set_y = train_dataset['y'][50001:,0]
-   valid_set_x = numpy.asarray(valid_set_x)
-   valid_set_x = theano.shared(valid_set_x)
-   valid_set_x = T.cast(valid_set_x, 'float64')
-   valid_set_x = T.reshape(valid_set_x, [valid_set_x.shape[0], valid_set_x.shape[1]*valid_set_x.shape[2]*valid_set_x.shape[3]])
-   valid_set_y = numpy.asarray(valid_set_y)
-   valid_set_y = theano.shared(valid_set_y)
-   valid_set_y = T.cast(valid_set_y, 'int32')
-   print "Done with creating extra dataset"
-
-   test_dataset = scipy.io.loadmat("test_32x32.mat")
-   test_set_x = []
-   for i in range(0, 26000):
-	   test_set_x.append(test_dataset['X'][:,:,:,i])
-   test_set_y = test_dataset['y'][:26000,0]
-   test_set_x = numpy.asarray(test_set_x)
-   test_set_x = theano.shared(test_set_x)
-   test_set_x = T.cast(test_set_x, 'float64')
-   test_set_x = T.reshape(test_set_x, [test_set_x.shape[0], test_set_x.shape[1]*test_set_x.shape[2]*test_set_x.shape[3]])
-   test_set_y = numpy.asarray(test_set_y)
-   test_set_y = theano.shared(test_set_y)
-   test_set_y = T.cast(test_set_y, 'int32')
-   print "Done with creating test dataset"
-
-   print "train_set_x:"
-   print train_set_x.eval()
-   print "train_set_y:"
-   print train_set_y.eval()
-
-   return train_set_x, train_set_y, valid_set_x, valid_set_y, test_set_x, test_set_y'''
