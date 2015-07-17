@@ -11,6 +11,58 @@ import theano.tensor as T
 import timeit
 from logistic_sgd import LogisticRegression, load_data
 import glob
+import random
+
+
+
+#MOSTLY JACKS CODE THAT WILL BE INCORPORATED LATER FOR THE PURPOSE OF SLICING THE IMAGES AND MATRICIES TO MAKE IT BOTH RUN FASTER ON THE CPU AND TO ENABLE MULTIPLE SUBSECTIONS OF THE IMAGES FOR THE PURPOSE OF MORE TRAINING DATA
+def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
+	
+	randomNumberx = random.randrange(0,481)
+	randomNumberx2 = None
+	if randomNumberx + 32 > 481:
+		randomNumberx2 = randomNumberx
+		randomNumberx -= 32
+	else:
+		randomNumberx2 = randomNumberx + 32
+	
+	randomNumbery = random.randrange(0,321)
+	randomNumbery2 = None
+	if randomNumbery + 32 > 321:
+		randomNumbery2 = randomNumbery
+		randomNumbery -= 32
+	else:
+		randomNumbery2 = randomNumbery + 32
+
+
+	for folders in os.walk(x_path_load):
+		for folder in folders[1]:
+			print folder
+			os.chdir(x_path_load + folder)
+			for filename in glob.glob('*.jpg'):
+				img = Image.open(filename)
+				img = img.crop((randomNumberx, randomNumbery, randomNumberx2, randomNumbery2))
+				img.save(x_path_save + filename)
+			os.chdir(x_path_load)
+
+	i=0
+	for folders in os.walk(y_path_load):
+		for folder in folders[1]:
+			print folder
+			os.chdir(y_path_load + folder)
+			for filename in glob.glob('*.mat'):
+				mat_as_array = scipy.io.loadmat(filename)['groundTruth'][0][0][0][0][1]
+				cropped_mat_as_array = mat_as_array[randomNumbery:randomNumbery2, randomNumberx:randomNumberx2]
+				if i==0:
+					print cropped_mat_as_array
+					print cropped_mat_as_array.shape
+					i=1
+				total_mat_file = scipy.io.loadmat(filename)
+				total_mat_file['groundTruth'][0][0][0][0][0] = cropped_mat_as_array
+				scipy.io.savemat(y_path_save + filename, total_mat_file)
+			os.chdir(y_path_load)
+
+
 
 def loadDataset(x_path, y_path):
 	#Loading the Images or X_values
@@ -29,7 +81,8 @@ def loadDataset(x_path, y_path):
 			rotated[file_name] = 1
 			img = img.rotate(270) #rotates counter clockwise
 		else:
-			rotated[file_name] = 0 
+			rotated[file_name] = 0
+			 
 		set_x.append(img)
 	#loading the matricies and Y_values
 	dirs_y = os.listdir( y_path )
@@ -51,6 +104,7 @@ def loadDataset(x_path, y_path):
 		value = rotated[str(filename)]
 		if value == 1:
 			singular_matrix = zip(*singular_matrix[::-1])
+		
 		set_y.append(singular_matrix)
 		
 	
@@ -69,35 +123,16 @@ def loadDataset(x_path, y_path):
 
 	return set_x, set_y, set_x_len
 
-''' MOSTLY JACKS CODE THAT WILL BE INCORPORATED LATER FOR THE PURPOSE OF SLICING THE IMAGES AND MATRICIES TO MAKE IT BOTH RUN FASTER ON THE CPU AND TO ENABLE MULTIPLE SUBSECTIONS OF THE IMAGES FOR THE PURPOSE OF MORE TRAINING DATA
-def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
-	for folders in os.walk('x_path_load'):
-		for folder in folders[1]:
-			print folder
-			os.chdir("x_path_load/" + folder)
-			for filename in glob.glob('*.jpg'):
-				img = Image.open(filename)
-				img = img.crop((225, 145, 257, 177))
-				img.save(filename)
-			os.chdir("x_path_load")
 
-	i=0
-	for folders in os.walk('y_path_load'):
-		for folder in folders[1]:
-			print folder
-			os.chdir("y_path_load/" + folder)
-			for filename in glob.glob('*.mat'):
-				mat_as_array = scipy.io.loadmat(filename)['groundTruth'][0][0][0][0][1]
-				cropped_mat_as_array = mat_as_array[225:257, 145:177]
-				if i==0:
-					print cropped_mat_as_array
-					print cropped_mat_as_array.shape
-					i=1
-				total_mat_file = scipy.io.loadmat(filename)
-				total_mat_file['groundTruth'][0][0][0][0][0] = cropped_mat_as_array
-				scipy.io.savemat(filename, total_mat_file)
-			os.chdir("y_path_load")
-'''
+
+
+
+
+
+
+
+
+
 class HiddenLayer(object):
 	def __init__(self, rng, input, n_in, n_out, W=None, b=None,
 				 activation=T.tanh):
