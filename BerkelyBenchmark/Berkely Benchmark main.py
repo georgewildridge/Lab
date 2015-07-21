@@ -24,54 +24,59 @@ import random
 
 
 def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
-	print "entering subsection"
-	randomNumberx = random.randrange(0,481)
-	randomNumberx2 = None
-	if randomNumberx + 32 > 481:
-		randomNumberx2 = randomNumberx
-		randomNumberx -= 32
-	else:
-		randomNumberx2 = randomNumberx + 32
-	
-	randomNumbery = random.randrange(0,321)
-	randomNumbery2 = None
-	if randomNumbery + 32 > 321:
-		randomNumbery2 = randomNumbery
-		randomNumbery -= 32
-	else:
-		randomNumbery2 = randomNumbery + 32
-	print "random numbers created"
+	times_run = 2
+	name = 0 #appended to the end of the file names so multiple crops can occour on one picture
+	for i in xrange(times_run):
+
+		print "entering subsection"
+		randomNumberx = random.randrange(0,481)
+		randomNumberx2 = None
+		if randomNumberx + 32 > 481:
+			randomNumberx2 = randomNumberx
+			randomNumberx -= 32
+		else:
+			randomNumberx2 = randomNumberx + 32
+		
+		randomNumbery = random.randrange(0,321)
+		randomNumbery2 = None
+		if randomNumbery + 32 > 321:
+			randomNumbery2 = randomNumbery
+			randomNumbery -= 32
+		else:
+			randomNumbery2 = randomNumbery + 32
+		print "random numbers created"
 
 
 
-	dirs_x = os.listdir(x_path_load)
-	valid_images = ['.jpg']
-	for file in dirs_x:
-		ext = os.path.splitext(file)[1]
-		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images:
-			continue
-		img = Image.open(x_path_load + file)
-		img = img.crop((randomNumberx, randomNumbery, randomNumberx2, randomNumbery2))
-		img.save(x_path_save + filename + '.jpg')
+		dirs_x = os.listdir(x_path_load)
+		valid_images = ['.jpg']
+		for file in dirs_x:
+			ext = os.path.splitext(file)[1]
+			filename = os.path.splitext(file)[0]
+			if ext.lower() not in valid_images:
+				continue
+			img = Image.open(x_path_load + file)
+			img = img.crop((randomNumberx, randomNumbery, randomNumberx2, randomNumbery2))
+			img.save(x_path_save + filename + str(name) + '.jpg')
 
-	print "x's should be cropped"
-	
-	dirs_y = os.listdir(y_path_load)
-	valid_files = ['.mat']
-	for file in dirs_y:
-		ext = os.path.splitext(file)[1]
-		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_files:
-			continue
-		#print "before"
+		print "x's should be cropped"
+		
+		dirs_y = os.listdir(y_path_load)
+		valid_files = ['.mat']
+		for file in dirs_y:
+			ext = os.path.splitext(file)[1]
+			filename = os.path.splitext(file)[0]
+			if ext.lower() not in valid_files:
+				continue
+			#print "before"
 
-		mat_as_array = scipy.io.loadmat(y_path_load + file)['groundTruth'][0][0][0][0][1]
-		#print mat_as_array.shape
-		cropped_mat_as_array = mat_as_array[randomNumberx:randomNumberx2, randomNumbery:randomNumbery2]
-		total_mat_file = scipy.io.loadmat(y_path_load + file)
-		total_mat_file['groundTruth'][0][0][0][0][1] = cropped_mat_as_array
-		scipy.io.savemat(y_path_save + filename, total_mat_file)
+			mat_as_array = scipy.io.loadmat(y_path_load + file)['groundTruth'][0][0][0][0][1]
+			#print mat_as_array.shape
+			cropped_mat_as_array = mat_as_array[randomNumberx:randomNumberx2, randomNumbery:randomNumbery2]
+			total_mat_file = scipy.io.loadmat(y_path_load + file)
+			total_mat_file['groundTruth'][0][0][0][0][1] = cropped_mat_as_array
+			scipy.io.savemat(y_path_save + filename + str(name) + '.mat', total_mat_file)
+		name += 1
 
 
 def loadDataset(x_path_init, y_path_init, x_path_save, y_path_save, x_path_load, y_path_load):
