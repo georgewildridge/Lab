@@ -1,6 +1,7 @@
 '''Berkely Benchmark'''
 #Input
 #Train
+#Test
 import os, sys
 from PIL import Image
 import PIL as im
@@ -23,7 +24,7 @@ import random
 
 
 def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
-	
+	print "entering subsection"
 	randomNumberx = random.randrange(0,481)
 	randomNumberx2 = None
 	if randomNumberx + 32 > 481:
@@ -39,39 +40,43 @@ def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
 		randomNumbery -= 32
 	else:
 		randomNumbery2 = randomNumbery + 32
+	print "random numbers created"
 
 
-	for folders in os.walk(x_path_load):
-		for folder in folders[1]:
-			print folder
-			os.chdir(x_path_load + folder)
-			for filename in glob.glob('*.jpg'):
-				img = Image.open(filename)
-				img = img.crop((randomNumberx, randomNumbery, randomNumberx2, randomNumbery2))
-				img.save(x_path_save + filename)
-			os.chdir(x_path_load)
 
-	i=0
-	for folders in os.walk(y_path_load):
-		for folder in folders[1]:
-			print folder
-			os.chdir(y_path_load + folder)
-			for filename in glob.glob('*.mat'):
-				mat_as_array = scipy.io.loadmat(filename)['groundTruth'][0][0][0][0][1]
-				cropped_mat_as_array = mat_as_array[randomNumbery:randomNumbery2, randomNumberx:randomNumberx2]
-				if i==0:
-					print cropped_mat_as_array
-					print cropped_mat_as_array.shape
-					i=1
-				total_mat_file = scipy.io.loadmat(filename)
-				total_mat_file['groundTruth'][0][0][0][0][1] = cropped_mat_as_array
-				scipy.io.savemat(y_path_save + filename, total_mat_file)
-			os.chdir(y_path_load)
+	dirs_x = os.listdir(x_path_load)
+	valid_images = ['.jpg']
+	for file in dirs_x:
+		ext = os.path.splitext(file)[1]
+		filename = os.path.splitext(file)[0]
+		if ext.lower() not in valid_images:
+			continue
+		img = Image.open(x_path_load + file)
+		img = img.crop((randomNumberx, randomNumbery, randomNumberx2, randomNumbery2))
+		img.save(x_path_save + filename + '.jpg')
 
+	print "x's should be cropped"
+	
+	dirs_y = os.listdir(y_path_load)
+	valid_files = ['.mat']
+	for file in dirs_y:
+		ext = os.path.splitext(file)[1]
+		filename = os.path.splitext(file)[0]
+		if ext.lower() not in valid_files:
+			continue
+		#print "before"
+
+		mat_as_array = scipy.io.loadmat(y_path_load + file)['groundTruth'][0][0][0][0][1]
+		#print mat_as_array.shape
+		cropped_mat_as_array = mat_as_array[randomNumberx:randomNumberx2, randomNumbery:randomNumbery2]
+		total_mat_file = scipy.io.loadmat(y_path_load + file)
+		total_mat_file['groundTruth'][0][0][0][0][1] = cropped_mat_as_array
+		scipy.io.savemat(y_path_save + filename, total_mat_file)
 
 
 def loadDataset(x_path_init, y_path_init, x_path_save, y_path_save, x_path_load, y_path_load):
 	#Rotating the Images or X_values
+	#HEyooo this is a TEST 
 	dirs_x_init = os.listdir( x_path_init )
 	valid_images_x = [".jpg"]
 	set_x = [] 
@@ -99,36 +104,51 @@ def loadDataset(x_path_init, y_path_init, x_path_save, y_path_save, x_path_load,
 		filename = os.path.splitext(file)[0]
 		if ext.lower() not in valid_files_y:
 			continue
-		dataset = numpy.array(scipy.io.loadmat(y_path_init + filename)["groundTruth"])
-		singular_matrix = dataset[0][0][0][0][1]
-		print singular_matrix
+		dataset = scipy.io.loadmat(y_path_init + filename)
+		singular_matrix = dataset['groundTruth'][0][0][0][0][1]
 		value = rotated[str(filename)]
-		if value == 1:
-			singular_matrix = zip(*singular_matrix[::-1])
-		print singular_matrix
+		#singular_matrix.flatten()
+		#print singular_matrix.shape
+		if singular_matrix.shape != (481,321):
+			sing_matrix = zip(*singular_matrix[::-1])
 
-		dataset[0][0][0][0][1] = singular_matrix
-		scipy.io.savemat(y_path_save + filename + '.mat', dataset)
+			sing_matrix = numpy.asarray(sing_matrix)
+			if sing_matrix.shape != (481,321):
+				print "Not going well"
+			#print sing_matrix.shape
+			else:
+				dataset['groundTruth'][0][0][0][0][1] = sing_matrix
+		d = dataset['groundTruth'][0][0][0][0][1]
+		if d.shape != (481,321):
+			print "NOT WORKING" 
+
+		#if value == 1:
+			#sing_matrix = zip(*singular_matrix[::-1])
+			#sing_matrix = numpy.asarray(sing_matrix)
+			#print sing_matrix.shape
+			#dataset['groundTruth'][0][0][0][0][1] = sing_matrix
+		save_name = str(y_path_save + filename + '.mat')
+		scipy.io.savemat(save_name, dataset)
 		
 	#taking random 32 by 32 sections of the images their coresponding matricies
 
-	subsection(x_path_save,y_path_save,x_path_load, y_path_load)
+	subsection(x_path_save, y_path_save, x_path_load, y_path_load)
 	
 
 	#LOADING THE IMAGES AND MATRICIES
 	dirs_x_load = os.listdir( x_path_load )
 	valid_images_x = [".jpg"]
 	set_x = []
-	for file in dirs_x:
+	for file in dirs_x_load:
 		ext = os.path.splitext(file)[1]
 		file_name = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images:
+		if ext.lower() not in valid_images_x:
 			continue
-		img = Image.open(x_path + file).getdata()
+		img = Image.open(x_path_load + file).getdata()
 		set_x.append( img )
 
 
-	dirs_y_load = os.listdir( y_path_init )
+	dirs_y_load = os.listdir( y_path_load )
 	valid_files_y = [ ".mat" ]
 	set_y = []
 	for file in dirs_y_load:
@@ -136,23 +156,24 @@ def loadDataset(x_path_init, y_path_init, x_path_save, y_path_save, x_path_load,
 		filename = os.path.splitext(file)[0]
 		if ext.lower() not in valid_files_y:
 			continue
-		dataset = numpy.array(scipy.io.loadmat(y_path_init + filename)["groundTruth"])
+		dataset = numpy.array(scipy.io.loadmat(y_path_load + filename)["groundTruth"])
 		singular_matrix = dataset[0][0][0][0][1]
+		#print singular_matrix.shape
 		set_y.append( singular_matrix )
-
 
 	
 	#TO THEANO SHARED VARIABLE#
-	set_x = numpy.asarray(set_x, dtype='float64')
+	set_x = numpy.asarray(set_x, dtype=theano.config.floatX)
 	set_y = numpy.asarray(set_y, dtype='int32')
 
 	set_x_len = theano.shared(set_x, borrow=True)# for the purpose of finding the length later
+	
 	set_y = theano.shared(set_y, borrow=True)
 
 	#set_x = T.cast(set_x_len, 'float64')
 	set_x = T.reshape(set_x_len, [set_x_len.shape[0], set_x_len.shape[1]*set_x_len.shape[2]])
 	#set_y = T.cast(set_y,'float64') #wrong .. to keep the compiler errors short disregard when running the whole thing !!!!!!!!!!!!!
-	set_y = T.reshape(set_y, [set_y.shape[0]* set_y.shape[1]*set_y.shape[2]])
+	set_y = T.reshape(set_y, [set_y.shape[0] * set_y.shape[1]*set_y.shape[2]])
 	
 
 	return set_x, set_y, set_x_len
