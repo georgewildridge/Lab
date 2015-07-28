@@ -94,11 +94,11 @@ class LogisticRegression(object):
         # symbolic expression for computing the matrix of class-membership
         # probabilities
         # Where:
-        # W is a matrix where column-k represent the separation hyperplane for
+        # W is a matrix where column-k represent the separation hyper plain for
         # class-k
         # x is a matrix where row-j  represents input training sample-j
-        # b is a vector where element-k represent the free parameter of
-        # hyperplane-k
+        # b is a vector where element-k represent the free parameter of hyper
+        # plain-k
         self.p_y_given_x = T.nnet.softmax(T.dot(input, self.W) + self.b)
 
         # symbolic description of how to compute prediction as class whose
@@ -108,9 +108,6 @@ class LogisticRegression(object):
 
         # parameters of the model
         self.params = [self.W, self.b]
-
-        # keep track of model input
-        self.input = input
 
     def negative_log_likelihood(self, y):
         """Return the mean of the negative log-likelihood of the prediction
@@ -130,6 +127,7 @@ class LogisticRegression(object):
         Note: we use the mean instead of the sum so that
               the learning rate is less dependent on the batch size
         """
+        print "me first"
         # start-snippet-2
         # y.shape[0] is (symbolically) the number of rows in y, i.e.,
         # number of examples (call it n) in the minibatch
@@ -155,6 +153,8 @@ class LogisticRegression(object):
         """
 
         # check if y has same dimension of y_pred
+        print "YYYYYYYYYYYYYYY"
+        print y.type
         if y.ndim != self.y_pred.ndim:
             raise TypeError(
                 'y should have the same shape as self.y_pred',
@@ -418,10 +418,6 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
                         )
                     )
 
-                    # save the best model
-                    with open('best_model.pkl', 'w') as f:
-                        cPickle.dump(classifier, f)
-
             if patience <= iter:
                 done_looping = True
                 break
@@ -439,32 +435,6 @@ def sgd_optimization_mnist(learning_rate=0.13, n_epochs=1000,
     print >> sys.stderr, ('The code for file ' +
                           os.path.split(__file__)[1] +
                           ' ran for %.1fs' % ((end_time - start_time)))
-
-
-def predict():
-    """
-    An example of how to load a trained model and use it
-    to predict labels.
-    """
-
-    # load the saved model
-    classifier = cPickle.load(open('best_model.pkl'))
-
-    # compile a predictor function
-    predict_model = theano.function(
-        inputs=[classifier.input],
-        outputs=classifier.y_pred)
-
-    # We can test it on some examples from test test
-    dataset='mnist.pkl.gz'
-    datasets = load_data(dataset)
-    test_set_x, test_set_y = datasets[2]
-    test_set_x = test_set_x.get_value()
-
-    predicted_values = predict_model(test_set_x[:10])
-    print ("Predicted values for the first 10 examples in test set:")
-    print predicted_values
-
 
 if __name__ == '__main__':
     sgd_optimization_mnist()

@@ -1,7 +1,7 @@
+#dkj
 '''Berkely Benchmark'''
 #Input
 #Train
-#Test
 import os, sys
 from PIL import Image
 import PIL as im
@@ -12,187 +12,93 @@ import theano.tensor as T
 import timeit
 from logistic_sgd import LogisticRegression, load_data
 import glob
-import random
+import cPickle
 
-#THEANO_FLAGS=device=cpu python.. 
-
-#MOSTLY JACKS CODE THAT WILL BE INCORPORATED LATER FOR THE PURPOSE OF SLICING THE IMAGES AND MATRICIES TO MAKE IT BOTH RUN FASTER ON THE CPU AND TO ENABLE MULTIPLE SUBSECTIONS OF THE IMAGES FOR THE PURPOSE OF MORE TRAINING DATA
-#1 OG FILE AREA--> all files are saved to another folder reoriented
-#2 
-
-
-
-
-def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
-	times_run = 2
-	name = 0 #appended to the end of the file names so multiple crops can occour on one picture
-	for i in xrange(times_run):
-
-		print "entering subsection"
-		randomNumberx = random.randrange(0,481)
-		randomNumberx2 = None
-		if randomNumberx + 32 > 481:
-			randomNumberx2 = randomNumberx
-			randomNumberx -= 32
-		else:
-			randomNumberx2 = randomNumberx + 32
-		
-		randomNumbery = random.randrange(0,321)
-		randomNumbery2 = None
-		if randomNumbery + 32 > 321:
-			randomNumbery2 = randomNumbery
-			randomNumbery -= 32
-		else:
-			randomNumbery2 = randomNumbery + 32
-		print "random numbers created"
-
-
-
-		dirs_x = os.listdir(x_path_load)
-		valid_images = ['.jpg']
-		for file in dirs_x:
-			ext = os.path.splitext(file)[1]
-			filename = os.path.splitext(file)[0]
-			if ext.lower() not in valid_images:
-				continue
-			img = Image.open(x_path_load + file)
-			img = img.crop((randomNumberx, randomNumbery, randomNumberx2, randomNumbery2))
-			img.save(x_path_save + filename + str(name) + '.jpg')
-
-		print "x's should be cropped"
-		
-		dirs_y = os.listdir(y_path_load)
-		valid_files = ['.mat']
-		for file in dirs_y:
-			ext = os.path.splitext(file)[1]
-			filename = os.path.splitext(file)[0]
-			if ext.lower() not in valid_files:
-				continue
-			#print "before"
-
-			mat_as_array = scipy.io.loadmat(y_path_load + file)['groundTruth'][0][0][0][0][1]
-			#print mat_as_array.shape
-			cropped_mat_as_array = mat_as_array[randomNumberx:randomNumberx2, randomNumbery:randomNumbery2]
-			total_mat_file = scipy.io.loadmat(y_path_load + file)
-			total_mat_file['groundTruth'][0][0][0][0][1] = cropped_mat_as_array
-			scipy.io.savemat(y_path_save + filename + str(name) + '.mat', total_mat_file)
-		name += 1
-
-
-def loadDataset(x_path_init, y_path_init, x_path_save, y_path_save, x_path_load, y_path_load):
-	#Rotating the Images or X_values
-	#HEyooo this is a TEST 
-	dirs_x_init = os.listdir( x_path_init )
-	valid_images_x = [".jpg"]
-	set_x = [] 
+def loadDataset(x_path, y_path):
+	#Loading the Images or X_values
+	dirs_x = os.listdir( x_path )
+	valid_images = [".jpg"]
+	set_x = []
 	rotated = {}
-	for file in dirs_x_init:
+	for file in dirs_x:
 		ext = os.path.splitext(file)[1]
 		file_name = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images_x:
+		if ext.lower() not in valid_images:
 			continue
-		img = Image.open(x_path_init + file)#.getdata()
+		img = Image.open(x_path + file).getdata()
 		width, height = img.size
 		if width != 481 and height !=321:
 			rotated[file_name] = 1
 			img = img.rotate(270) #rotates counter clockwise
 		else:
-			rotated[file_name] = 0
-		img.save(x_path_save + file_name + '.jpg')
-
-	#rotating the matricies and Y_values
-	dirs_y_init = os.listdir( y_path_init )
-	valid_files_y = [ ".mat" ]
+			rotated[file_name] = 0 
+		set_x.append(img)
+	#loading the matricies and Y_values
+	dirs_y = os.listdir( y_path )
+	valid_files = [ ".mat" ]
 	set_y = []
-	for file in dirs_y_init:
+	i = 0
+	for file in dirs_y:
 		ext = os.path.splitext(file)[1]
 		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_files_y:
+		if ext.lower() not in valid_files:
 			continue
-		dataset = scipy.io.loadmat(y_path_init + filename)
-		singular_matrix = dataset['groundTruth'][0][0][0][0][1]
-		value = rotated[str(filename)]
-		#singular_matrix.flatten()
-		#print singular_matrix.shape
-		if singular_matrix.shape != (481,321):
-			sing_matrix = zip(*singular_matrix[::-1])
-
-			sing_matrix = numpy.asarray(sing_matrix)
-			if sing_matrix.shape != (481,321):
-				print "Not going well"
-			#print sing_matrix.shape
-			else:
-				dataset['groundTruth'][0][0][0][0][1] = sing_matrix
-		d = dataset['groundTruth'][0][0][0][0][1]
-		if d.shape != (481,321):
-			print "NOT WORKING" 
-
-		#if value == 1:
-			#sing_matrix = zip(*singular_matrix[::-1])
-			#sing_matrix = numpy.asarray(sing_matrix)
-			#print sing_matrix.shape
-			#dataset['groundTruth'][0][0][0][0][1] = sing_matrix
-		save_name = str(y_path_save + filename + '.mat')
-		scipy.io.savemat(save_name, dataset)
-		
-	#taking random 32 by 32 sections of the images their coresponding matricies
-
-	subsection(x_path_save, y_path_save, x_path_load, y_path_load)
-	
-
-	#LOADING THE IMAGES AND MATRICIES
-	dirs_x_load = os.listdir( x_path_load )
-	valid_images_x = [".jpg"]
-	set_x = []
-	for file in dirs_x_load:
-		ext = os.path.splitext(file)[1]
-		file_name = os.path.splitext(file)[0]
-		if ext.lower() not in valid_images_x:
-			continue
-		img = Image.open(x_path_load + file).getdata()
-		set_x.append( img )
-
-
-	dirs_y_load = os.listdir( y_path_load )
-	valid_files_y = [ ".mat" ]
-	set_y = []
-	for file in dirs_y_load:
-		ext = os.path.splitext(file)[1]
-		filename = os.path.splitext(file)[0]
-		if ext.lower() not in valid_files_y:
-			continue
-		dataset = numpy.array(scipy.io.loadmat(y_path_load + filename)["groundTruth"])
+		dataset = numpy.array(scipy.io.loadmat(y_path + filename)["groundTruth"])
 		singular_matrix = dataset[0][0][0][0][1]
-		#print singular_matrix.shape
-		set_y.append( singular_matrix )
-
+		
+		#if i == 0:
+			#print "sing mat"
+			#print singular_matrix
+		#	i = 1
+		value = rotated[str(filename)]
+		if value == 1:
+			singular_matrix = zip(*singular_matrix[::-1])
+		set_y.append(singular_matrix)
+		
 	
 	#TO THEANO SHARED VARIABLE#
 	set_x = numpy.asarray(set_x, dtype=theano.config.floatX)
 	set_y = numpy.asarray(set_y, dtype='int32')
 
 	set_x_len = theano.shared(set_x, borrow=True)# for the purpose of finding the length later
-	
 	set_y = theano.shared(set_y, borrow=True)
 
 	#set_x = T.cast(set_x_len, 'float64')
 	set_x = T.reshape(set_x_len, [set_x_len.shape[0], set_x_len.shape[1]*set_x_len.shape[2]])
 	#set_y = T.cast(set_y,'float64') #wrong .. to keep the compiler errors short disregard when running the whole thing !!!!!!!!!!!!!
-	set_y = T.reshape(set_y, [set_y.shape[0], set_y.shape[1]*set_y.shape[2]])
+	set_y = T.reshape(set_y, [set_y.shape[0]* set_y.shape[1]*set_y.shape[2]])
 	
 
 	return set_x, set_y, set_x_len
 
-
-
-
-
-
-
-
-
-
-
+''' MOSTLY JACKS CODE THAT WILL BE INCORPORATED LATER FOR THE PURPOSE OF SLICING THE IMAGES AND MATRICIES TO MAKE IT BOTH RUN FASTER ON THE CPU AND TO ENABLE MULTIPLE SUBSECTIONS OF THE IMAGES FOR THE PURPOSE OF MORE TRAINING DATA
+def subsection(x_path_load, y_path_load, x_path_save, y_path_save):
+	for folders in os.walk('x_path_load'):
+		for folder in folders[1]:
+			print folder
+			os.chdir("x_path_load/" + folder)
+			for filename in glob.glob('*.jpg'):
+				img = Image.open(filename)
+				img = img.crop((225, 145, 257, 177))
+				img.save(filename)
+			os.chdir("x_path_load")
+	i=0
+	for folders in os.walk('y_path_load'):
+		for folder in folders[1]:
+			print folder
+			os.chdir("y_path_load/" + folder)
+			for filename in glob.glob('*.mat'):
+				mat_as_array = scipy.io.loadmat(filename)['groundTruth'][0][0][0][0][1]
+				cropped_mat_as_array = mat_as_array[225:257, 145:177]
+				if i==0:
+					print cropped_mat_as_array
+					print cropped_mat_as_array.shape
+					i=1
+				total_mat_file = scipy.io.loadmat(filename)
+				total_mat_file['groundTruth'][0][0][0][0][0] = cropped_mat_as_array
+				scipy.io.savemat(filename, total_mat_file)
+			os.chdir("y_path_load")
+'''
 class HiddenLayer(object):
 	def __init__(self, rng, input, n_in, n_out, W=None, b=None,
 				 activation=T.tanh):
@@ -200,23 +106,16 @@ class HiddenLayer(object):
 		Typical hidden layer of a MLP: units are fully-connected and have
 		sigmoidal activation function. Weight matrix W is of shape (n_in,n_out)
 		and the bias vector b is of shape (n_out,).
-
 		NOTE : The nonlinearity used here is tanh
-
 		Hidden unit activation is given by: tanh(dot(input,W) + b)
-
 		:type rng: numpy.random.RandomState
 		:param rng: a random number generator used to initialize weights
-
 		:type input: theano.tensor.dmatrix
 		:param input: a symbolic tensor of shape (n_examples, n_in)
-
 		:type n_in: int
 		:param n_in: dimensionality of input
-
 		:type n_out: int
 		:param n_out: number of hidden units
-
 		:type activation: theano.Op or function
 		:param activation: Non linearity to be applied in the hidden
 						   layer
@@ -269,7 +168,6 @@ class HiddenLayer(object):
 # start-snippet-2
 class MLP(object):
 	"""Multi-Layer Perceptron Class
-
 	A multilayer perceptron is a feedforward artificial neural network model
 	that has one layer or more of hidden units and nonlinear activations.
 	Intermediate layers usually have as activation function tanh or the
@@ -280,25 +178,19 @@ class MLP(object):
 
 	def __init__(self, rng, input, n_in, n_hidden, n_out):
 		"""Initialize the parameters for the multilayer perceptron
-
 		:type rng: numpy.random.RandomState
 		:param rng: a random number generator used to initialize weights
-
 		:type input: theano.tensor.TensorType
 		:param input: symbolic variable that describes the input of the
 		architecture (one minibatch)
-
 		:type n_in: int
 		:param n_in: number of input units, the dimension of the space in
 		which the datapoints lie
-
 		:type n_hidden: int
 		:param n_hidden: number of hidden units
-
 		:type n_out: int
 		:param n_out: number of output units, the dimension of the space in
 		which the labels lie
-
 		"""
 
 		# Since we are dealing with a one hidden layer MLP, this will translate
@@ -355,38 +247,26 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 	"""
 	Demonstrate stochastic gradient descent optimization for a multilayer
 	perceptron
-
 	This is demonstrated on MNIST.
-
 	:type learning_rate: float
 	:param learning_rate: learning rate used (factor for the stochastic
 	gradient
-
 	:type L1_reg: float
 	:param L1_reg: L1-norm's weight when added to the cost (see
 	regularization)
-
 	:type L2_reg: float
 	:param L2_reg: L2-norm's weight when added to the cost (see
 	regularization)
-
 	:type n_epochs: int
 	:param n_epochs: maximal number of epochs to run the optimizer
-
 	:type dataset: string
 	:param dataset: the path of the MNIST dataset file from
 				 http://www.iro.umontreal.ca/~lisa/deep/data/mnist/mnist.pkl.gz
-
-
    """
-
-
-
-
 	print "Loading data..."
-	train_set_x, train_set_y, train_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/train/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/images/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/groundTruth/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/images/train/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/groundTruth/train/')
-	valid_set_x, valid_set_y, valid_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/val/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/images/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/groundTruth/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/images/val/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/groundTruth/val/')
-	test_set_x, test_set_y, test_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/test/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/test/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/images/test/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Rotated/groundTruth/test/', '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/images/test/',  '/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR_cropped/Cropped/groundTruth/test/')
+	train_set_x, train_set_y, train_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/train/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/train/')
+	valid_set_x, valid_set_y, valid_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/val/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/val/')
+	test_set_x, test_set_y, test_len = loadDataset('/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/images/test/','/home/george/Dropbox/Lab/BerkelyBenchmarkData/BSR/BSDS500/data/groundTruth/test/')
 	print "...data loaded"
 
 	# compute number of minibatches for training, validation and testing
@@ -413,7 +293,7 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 		input=x,
 		n_in=481 * 321 * 3,
 		n_hidden=n_hidden,
-		n_out=1024
+		n_out=154401
 	)
 
 	# start-snippet-4
@@ -429,9 +309,8 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 
 	# compiling a Theano function that computes the mistakes that are made
 	# by the model on a minibatch
-	print "rut row"
+	print "test set y"
 	print test_set_y
-	print test_set_x
 	test_model = theano.function(
 		inputs=[index],
 		outputs=classifier.errors(y),
@@ -552,7 +431,17 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 						   'best model %f %%') %
 						  (epoch, minibatch_index + 1, n_train_batches,
 						   test_score * 100.))
+				if epoch%50:
+					f = file('params.save', 'wb')
+					w1_save = classifier.params[0]
+					b1_save = classifier.params[1]
+					w2_save = classifier.params[2]
+					b2_save = classifier.params[3]
 
+					cPickle.dump(w1_save.get_value(borrow=True), f, -1)
+					cPickle.dump(b1_save.get_value(borrow=True), f, -1)
+					cPickle.dump(w2_save.get_value(borrow=True), f, -1)
+					cPickle.dump(b2_save.get_value(borrow=True), f, -1)
 			if patience <= iter:
 				done_looping = True
 				break
@@ -565,6 +454,17 @@ def test_mlp(learning_rate=0.01, L1_reg=0.00, L2_reg=0.0001, n_epochs=1000,
 						  os.path.split(__file__)[1] +
 						  ' ran for %.2fm' % ((end_time - start_time) / 60.))
 
+	f = file('params.save', 'wb')
+	w1_save = classifier.params[0]
+	b1_save = classifier.params[1]
+	w2_save = classifier.params[2]
+	b2_save = classifier.params[3]
+
+	cPickle.dump(w1_save.get_value(borrow=True), f, -1)
+	cPickle.dump(b1_save.get_value(borrow=True), f, -1)
+	cPickle.dump(w2_save.get_value(borrow=True), f, -1)
+	cPickle.dump(b2_save.get_value(borrow=True), f, -1)
 
 if __name__ == '__main__':
 	test_mlp()
+

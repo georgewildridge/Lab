@@ -1,0 +1,7 @@
+Loading data...
+...data loaded
+... building the model
+rut row
+Reshape{1}.0
+Reshape{2}.0
+... training
