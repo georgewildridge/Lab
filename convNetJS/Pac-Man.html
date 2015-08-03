@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- saved from url=(0031)http://pacman.shaunew.com/play/ -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=windows-1252">
+
+    <title>Pac-Man</title>
+
+    <!-- Lock viewport on mobile devices. -->
+    <!--
+    <meta name="viewport" content="width=device-width; initial-scale=1.0; maximum-scale=1.0; user-scalable=0;" />
+
+    -->
+    <!-- Allow page to be saved as web app on iOS. -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+
+    <!-- Hide status bar -->
+    <meta names="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
+    <!-- icon used for iOS Web App -->
+    <link rel="apple-touch-icon-precomposed" href="http://pacman.shaunew.com/play/icon/ios_icon.png">
+
+    <link rel="icon" type="image/png" href="http://pacman.shaunew.com/play/icon/favicon.png">
+
+    <style>
+        body {
+            margin:0;
+            background: #000;
+        }
+        @font-face {
+            font-family: 'ArcadeR';
+            src: url('font/ARCADE_R.TTF');
+            /*
+            src: url('font/PressStart2P.ttf');
+            */
+        }
+        #canvas-warning {
+            color: #FF0;
+            font-size: 1.5em;
+        }
+    </style>
+
+    <script src="./Pac-Man_files/pacman.js"></script>
+    <script src="./2048_files/deepqlearn.js" type=text/javascript></script>
+    <script src="./2048_files/convnet.js" type=text/javascript></script>
+    <script src="./2048_files/util.js" type=text/javascript></script>
+    <script src="./2048_files/vis.js" type=text/javascript></script>
+</head>
+
+<body style="margin-left: 389.039548022599px;">
+    <div style="font-family: ArcadeR"> </div>
+    <canvas id="canvas" width="661" height="808"><div id="canvas-warning">Your browser does not support HTML Canvas.  Please upgrade!</div></canvas>
+    <canvas id="atlas" style="display:none" width="703" height="1104"></canvas>
+
+
+
+</body></html>
